@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sistema de Controle de Salas - Contagem</title>
+  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2229/2229739.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    body { font-family: "Inter", sans-serif; }
+    .tab { display: none; }
+    .tab-active { display: block; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-[#d7e3fc] to-[#dbe4fc] min-h-screen">
+  <header class="flex justify-between items-center px-6 py-4 bg-white shadow-sm">
+    <div class="flex items-center space-x-3">
+      <img class="mb-2 rounded-full" height="48" width="48" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-at3-kr-oWLrVWr_tXLrktpPci-fr4bq0gQ&s" alt="Ícone usuário">
+
+      <div>
+        <h1 class="font-semibold text-gray-900 text-base leading-tight">Sistema de Controle de Salas</h1>
+        <p class="text-gray-600 text-xs leading-tight">Clínica Contagem</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-6 text-sm text-gray-700">
+      <div class="flex items-center space-x-1">
+        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        <span>{{ salas | selectattr('2', 'equalto', None) | list | length }} Disponíveis</span>
+      </div>
+      <div class="flex items-center space-x-1">
+        <i class="fas fa-user-friends text-blue-600"></i>
+        <span>{{ profissionais | length }} Profissionais</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="px-6 py-6 max-w-7xl mx-auto">
+    <nav class="flex space-x-2 mb-6">
+      <button onclick="showTab('salas')" class="tab-button text-blue-600 bg-white px-4 py-1 rounded-md text-sm font-semibold shadow-sm">Salas Contagem </button>
+      <button onclick="showTab('profissionais')" class="tab-button text-gray-700 bg-white/70 px-4 py-1 rounded-md text-sm font-normal">Profissionais</button>
+    </nav>
+
+    <section id="salas" class="tab tab-active">
+
+      <!-- Formulário para escolher a data -->
+      <form method="get" action="/mapaadm" class="mb-6 flex items-center gap-3">
+        <label for="data" class="text-sm font-semibold text-gray-800">Selecione o dia:</label>
+        <input type="date" id="data" name="data" value="{{ data }}" class="border border-gray-300 rounded p-2 text-sm shadow-sm" required>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm shadow-md">
+          Ver Mapa
+        </button>
+      </form>
+
+      <!-- Confirmação visual da data carregada -->
+      <p class="text-sm text-gray-600 mb-4">Data carregada: <strong>{{ data }}</strong></p>
+
+      {% for andar in [1, 2] %}
+      <h2 class="flex items-center font-semibold text-gray-900 text-lg mb-4">
+        <i class="fas fa-building text-blue-600 mr-2"></i> {{ andar }}º Andar
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 mb-8">
+        {% for sala in salas if sala[1].startswith(andar|string) %}
+        <article class="bg-white rounded-lg p-4 shadow-md flex flex-col items-center">
+          <div class="flex justify-between w-full mb-4">
+            <h3 class="font-semibold text-gray-900 text-base">{{ sala[1] }}</h3>
+            <span class="w-3 h-3 rounded-full {{ 'bg-green-600' if not sala[2] else 'bg-red-500' }} mt-1" title="{{ 'Disponível' if not sala[2] else 'Ocupada' }}"></span>
+          </div>
+          <img class="mb-2 rounded-full" height="48" width="48" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-at3-kr-oWLrVWr_tXLrktpPci-fr4bq0gQ&s" alt="Ícone usuário">
+          <p class="text-xs text-gray-500">{{ sala[2] if sala[2] else 'Sala disponível' }}</p>
+        </article>
+        {% endfor %}
+      </div>
+      {% endfor %}
+
+    </section>
+
+<!-- PROFISSIONAIS -->
+    <section id="profissionais" class="tab">
+
+      <!-- Selecionar data da escala -->
+      <form method="get" action="/admin" class="flex items-center gap-3 mb-6">
+        <label for="data" class="text-sm font-semibold text-gray-800">Data da Escala:</label>
+        <input type="date" id="data" name="data" value="{{ data }}" required
+          class="border border-gray-300 rounded px-3 py-2 text-sm shadow-sm">
+        <button type="submit"
+          class="bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md px-4 py-2 shadow-md">Ver</button>
+      </form>
+
+      <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center mb-6">
+        <h2 class="text-[#1e293b] font-semibold text-lg leading-6">Profissionais Cadastrados</h2>
+        <button onclick="abrirModal()" class="flex items-center gap-2 bg-[#2563eb] text-white text-sm font-normal rounded-md px-4 py-2 hover:bg-[#1e40af] transition">
+          <i class="fas fa-plus"></i> Adicionar Profissional
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {% for profissional in profissionais %}
+        <div class="bg-white rounded-lg shadow-md w-full p-4 space-y-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 flex items-center justify-center rounded-full bg-[#dbe7ff] text-[#2563eb]">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-normal text-[#1e293b] truncate">{{ profissional[1] }}</p>
+              <p class="text-xs text-[#475569] leading-4">{{ profissional[2] }}</p>
+            </div>
+          </div>
+          <form method="POST" action="/alocar" class="flex flex-col space-y-2">
+            <input type="hidden" name="profissional_id" value="{{ profissional[0] }}" />
+            <input type="hidden" name="data" value="{{ data }}" />
+            <select name="sala_id" required class="rounded border border-gray-300 px-2 py-1 text-sm">
+              <option value="">Alocar em Sala</option>
+              {% for sala in salas if sala[2] == None %}
+              <option value="{{ sala[0] }}">{{ sala[1] }}</option>
+              {% endfor %}
+            </select>
+            <button class="bg-[#2563eb] text-white text-sm rounded-md py-2 hover:bg-[#1e40af] transition">Alocar</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL CADASTRO -->
+  <div id="modalCadastro" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg border border-gray-300 shadow-md p-6 w-full max-w-sm relative">
+      <h2 class="text-gray-800 text-lg font-normal mb-6">Cadastrar Profissional</h2>
+      <button onclick="fecharModal()" class="absolute top-5 right-5 text-gray-500 hover:text-gray-700">
+        <i class="fas fa-times"></i>
+      </button>
+      <form method="POST" action="/cadastrar" class="space-y-4">
+        <div>
+          <label for="nome" class="block text-xs font-medium text-gray-600 mb-1">Nome do Profissional</label>
+          <input id="nome" name="nome" type="text" required placeholder="Digite o nome completo" class="w-full rounded border border-gray-300 text-gray-700 text-sm placeholder-gray-400 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+        </div>
+        <div>
+          <label for="especialidade" class="block text-xs font-medium text-gray-600 mb-1">Especialidade</label>
+          <input id="especialidade" name="especialidade" type="text" required placeholder="Ex: Cardiologia, Pediatria..." class="w-full rounded border border-gray-300 text-gray-700 text-sm placeholder-gray-400 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+        </div>
+        <div class="flex space-x-3 pt-4">
+          <button type="submit" class="flex-1 bg-blue-600 text-white text-sm font-normal rounded px-4 py-2 hover:bg-blue-700">Cadastrar</button>
+          <button type="button" onclick="fecharModal()" class="flex-1 bg-gray-600 text-white text-sm font-normal rounded px-4 py-2 hover:bg-gray-700">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function showTab(id) {
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('tab-active'));
+      document.querySelector(`#${id}`).classList.add('tab-active');
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('text-blue-600', 'font-semibold'));
+      event.target.classList.add('text-blue-600', 'font-semibold');
+    }
+
+    function abrirModal() {
+      document.getElementById('modalCadastro').classList.remove('hidden');
+    }
+
+    function fecharModal() {
+      document.getElementById('modalCadastro').classList.add('hidden');
+    }
+    
+    function showTab(id) {
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('tab-active'));
+      document.querySelector(`#${id}`).classList.add('tab-active');
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('text-blue-600', 'font-semibold'));
+      event.target.classList.add('text-blue-600', 'font-semibold');
+    }
+
+    function abrirModal() {
+      document.getElementById('modalCadastro').classList.remove('hidden');
+    }
+
+    function fecharModal() {
+      document.getElementById('modalCadastro').classList.add('hidden');
+    }
+  </script>
+
+  {% if mostrar_login %}
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+      <h2 class="text-lg font-semibold text-gray-700 mb-4 text-center">Login Administrativo</h2>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="text-red-600 text-sm text-center mb-3">
+            {{ messages[0] }}
+          </div>
+        {% endif %}
+      {% endwith %}
+      <form method="POST" action="{{ url_for('home') }}" class="space-y-4">
+        <div>
+          <label class="block text-sm text-gray-600">Usuário</label>
+          <input type="text" name="usuario" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-600">Senha</label>
+          <input type="password" name="senha" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" required>
+        </div>
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Entrar</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <footer class="bg-white border-t mt-10 py-6 px-4 text-center text-sm text-gray-600">
+      <p class="mb-2">Desenvolvido por <strong class="text-blue-600">João Layon</strong></p>
+      <p class="mb-4">Precisa de um sistema personalizado? Entre em contato comigo!</p>
+      <a href="https://wa.link/53vjew" target="_blank" class="inline-block bg-green-500 hover:bg-green-600 text-white text-sm font-medium py-2 px-4 rounded shadow transition">
+        Fale comigo no WhatsApp
+      </a>
+    </footer>
+
+    
+</body>
+</html>
